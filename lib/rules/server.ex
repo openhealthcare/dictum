@@ -2,6 +2,7 @@ defmodule Dictum.Rules.Server do
   use GenServer
   alias Dictum.Rules.Rule
   alias Dictum.Rules.RuleInput
+  alias Dictum.Rules.Processor
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, opts)
@@ -26,12 +27,6 @@ defmodule Dictum.Rules.Server do
     end)
   end
 
-  def test_eval_rule(rule = %Rule{}, input = %RuleInput{} ) do
-    # TODO: Move this to a place where it will actually check the
-    # rules and generate a log entry
-    "Something was done ..."
-  end
-
 
   #######################################################################
   # Genserver implementation
@@ -53,7 +48,7 @@ defmodule Dictum.Rules.Server do
     # Apply all the rules to the input and create a log entry
     # out of the results, removing those that did nothing.
     results = state
-      |> Enum.map(fn {k,v}-> test_eval_rule(Rule.new(k, v), input) end)
+      |> Enum.map(fn {k,v}-> Processor.eval(Rule.new(k, v), input) end)
       |> Enum.filter(fn x -> x != nil end)
 
     {:noreply, state}
