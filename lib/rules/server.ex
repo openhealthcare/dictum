@@ -37,11 +37,11 @@ defmodule Dictum.Rules.Server do
   end
 
   def handle_call({:get_rule, name}, _from, state) do
-    {:reply, %Rule{:name => name, :content => Dict.get(state, name)}, state}
+    {:reply, %Rule{:name => name, :lines => Dict.get(state, name)}, state}
   end
 
   def handle_cast({:add_rule, rule = %Rule{}}, state) do
-    {:noreply, Dict.put(state, rule.name, rule.content)}
+    {:noreply, Dict.put(state, rule.name, rule.lines)}
   end
 
   def handle_cast({:eval, input = %RuleInput{}}, state) do

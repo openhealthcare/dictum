@@ -1,21 +1,25 @@
 defmodule Dictum.Rules.Rule do
-  defstruct name: "", content: ""
+  defstruct name: "", lines: ""
 
-  def new(name, text) when is_list(text) do
-    %__MODULE__{:name=> name, :content=>text}
+  def new(name, lines) when is_list(lines) do
+    %__MODULE__{:name=> name, :lines=>lines}
   end
 
   def new(name, text) do
-    %__MODULE__{:name=> name, :content=>String.split(text, "\n", trim: true)}
+    %__MODULE__{:name=> name, :lines=>String.split(text, "\n", trim: true)}
   end
 
 end
 
 defmodule Dictum.Rules.RuleInput do
-  defstruct pre: %{}, post: %{}
+  defstruct pre: %{}, post: %{}, context: %{}
 
   def new(pre, post) do
     %__MODULE__{:pre=> pre, :post=>[post]}
+  end
+
+  def reset(input) do
+    %{input| :context => %{}}
   end
 
 end

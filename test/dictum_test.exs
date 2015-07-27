@@ -10,7 +10,7 @@ defmodule DictumTest do
 
     r2 = Server.get_rule(:ruleserver, "test/rules/default.rule")
     assert "test/rules/default.rule" = r2.name
-    assert ["When \"diagnosis\" was \"CAP\""] = r2.content
+    assert ["When \"diagnosis\" was \"CAP\""] = r2.lines
   end
 
   test "evaluate rules" do
