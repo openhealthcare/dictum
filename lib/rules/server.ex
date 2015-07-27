@@ -50,7 +50,7 @@ defmodule Dictum.Rules.Server do
     results = state
       |> Enum.map(fn {k,v}-> Processor.eval(Rule.new(k, v), input) end)
       |> Enum.filter(fn x -> x != nil end)
-
+    IO.inspect results
     {:noreply, state}
   end
 
