@@ -1,6 +1,7 @@
 defmodule Dictum.Rules.Processor do
   alias Dictum.Rules.Rule
   alias Dictum.Rules.RuleInput
+  alias Dictum.Rules.Steps
 
   def eval(rule = %Rule{:lines=>lines}, input = %RuleInput{} ) when length(lines) == 0 do
     {rule.name, false, ["No rule lines to process"]}
@@ -24,7 +25,6 @@ defmodule Dictum.Rules.Processor do
     # Iterate through each line in the rule lines and evaluate
     # whether it resolves to true or false.  If it is false, we're done,
     # otherwise we probably have an action to take (the 'Then' clause).
-
     task = Task.async(__MODULE__, :log_collector, [[]])
 
     # Reset the context used for passing information through a single ruleset
@@ -32,7 +32,7 @@ defmodule Dictum.Rules.Processor do
 
     takes = rule.lines
             |>  Enum.take_while(fn(x) ->
-                  {ok, log} = eval_line(x, input)
+                  {ok, log} = eval_line(rule.name, x, input)
                   send(task.pid, {:entry, [log]})
                   ok
                 end)
@@ -47,12 +47,50 @@ defmodule Dictum.Rules.Processor do
     {rule.name, length(takes) == length(rule.lines), logs}
   end
 
-  defp eval_line(line, input = %RuleInput{}) do
+
+  defp eval_line(filename, line, input = %RuleInput{}) do
     # Should return True if the line was evalualted.  If we return false
     # then the following rules will not be processed.
+    params = parse_sentence(line)
+    [f | args] = params
+    try do
+      {status, msg} = apply(Steps, func_name(f), [filename, args, {"", input.pre, input.post, ""}] )
+      {status==:ok, msg}
+    rescue
+      _ ->
+        {false, "Failed to process line: #{line}"}
+    end
 
-    {false, ""}
   end
 
+
+  def parse_sentence(sentence) do
+    Enum.map(Regex.scan(~r/[^\s"]+|"([^"]*)"/, sentence), &(hd(&1)))
+    |> Enum.map(fn(x) ->
+        case String.match?(x, ~r/\".*\"/) do
+            true -> String.replace("#{x}", "\"", "")
+            false -> create_atom(String.downcase(x))
+        end
+    end)
+  end
+
+  defp create_atom(str) do
+    try do
+      String.to_existing_atom(str)
+    rescue
+      _ -> String.to_atom(str)
+    end
+  end
+
+  def func_name(str) do
+    case str do
+        :when ->
+            :when_
+        :and ->
+            :when_
+        _ ->
+            str
+    end
+  end
 
 end

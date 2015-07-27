@@ -12,6 +12,10 @@ defmodule Dictum.Rules.Server do
     GenServer.cast(pid, {:add_rule, rule})
   end
 
+  def delete_rule(pid, rule) do
+    GenServer.cast(pid, {:delete_rule, rule})
+  end
+
   def get_rule(pid, name) do
     GenServer.call(pid, {:get_rule, name})
   end
@@ -19,6 +23,11 @@ defmodule Dictum.Rules.Server do
   def eval_rules(pid, input = %RuleInput{}) do
     GenServer.cast(pid, {:eval, input})
   end
+
+  def eval_rules_sync(pid, input = %RuleInput{}) do
+    GenServer.call(pid, {:eval, input})
+  end
+
 
   def load_rules(pid, from_folder) do
     Path.wildcard(from_folder <> "/**/*.rule")
@@ -44,13 +53,26 @@ defmodule Dictum.Rules.Server do
     {:noreply, Dict.put(state, rule.name, rule.lines)}
   end
 
+  def handle_call({:eval, input = %RuleInput{}}, _from, state) do
+    # Apply all the rules to the input and create a log entry
+    # out of the results, removing those that did nothing.
+    results = state
+      |> Enum.map(fn {k,v}-> Processor.eval(Rule.new(k, v), input) end)
+      |> Enum.filter(fn x -> x != nil end)
+    {:reply, results, state}
+  end
+
+
+  def handle_cast({:delete_rule, rule}, state) do
+    {:noreply,  Dict.drop(state, [rule])}
+  end
+
   def handle_cast({:eval, input = %RuleInput{}}, state) do
     # Apply all the rules to the input and create a log entry
     # out of the results, removing those that did nothing.
     results = state
       |> Enum.map(fn {k,v}-> Processor.eval(Rule.new(k, v), input) end)
       |> Enum.filter(fn x -> x != nil end)
-    IO.inspect results
     {:noreply, state}
   end
 
