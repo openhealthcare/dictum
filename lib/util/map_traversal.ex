@@ -6,9 +6,10 @@ defmodule Dictum.Utils.MapTraversal do
     for instance diagnosis.name which will first resolve
     diagnosis, and then resolve name on the result.
     """
-    def find_value(key, data) when is_map(data) do
+    def find_value(key, data) do
         find(String.split(key, "."), data)
     end
+
 
     @doc"""
     Finds the result of looking for key in the map and then

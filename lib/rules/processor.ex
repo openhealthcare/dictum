@@ -54,10 +54,16 @@ defmodule Dictum.Rules.Processor do
     params = parse_sentence(line)
     [f | args] = params
     try do
-      {status, msg} = apply(Steps, func_name(f), [filename, args, {"", input.pre, input.post, ""}] )
-      {status==:ok, msg}
+      {status, msg} = apply(Steps, func_name(f), ["", args, {"", input.pre, input.post, ""}] )
+      log = case status do
+        :ok ->
+          ""
+        :fail ->
+          msg
+      end
+      {status==:ok, log}
     rescue
-      _ ->
+      x ->
         {false, "Failed to process line: #{line}"}
     end
 
